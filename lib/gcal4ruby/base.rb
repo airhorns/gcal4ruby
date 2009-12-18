@@ -123,9 +123,17 @@ module GCal4Ruby
         ret = http.post(location.to_s, content, header)
       end
       while ret.is_a?(Net::HTTPRedirection)
+        location = URI.parse(ret['location'])
+        https = get_http_object(location)
+        puts "url = "+url if @debug
+        if location.scheme == 'https'
+          puts "SSL True" if @debug
+          https.use_ssl = true
+          https.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        end
         puts "Redirect recieved, resending post" if @debug
         https.start do |http|
-          ret = http.post(ret['location'], content, header)
+          ret = http.post(location.to_s, content, header)
         end
       end
       if ret.is_a?(Net::HTTPSuccess)
@@ -177,7 +185,7 @@ module GCal4Ruby
       header = auth_header(header)
       ret = nil
       location = URI.parse(url)
-      http = get_http_object(location)
+      https = get_http_object(location)
       puts "url = "+url if @debug
       if location.scheme == 'https'
         puts "SSL True" if @debug
@@ -185,14 +193,21 @@ module GCal4Ruby
         https.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end
       puts "Starting post\nHeader: #{header}\n" if @debug
-      http.start do |http|
+      https.start do |http|
         ret = http.get(location.to_s, header)
       end
       while ret.is_a?(Net::HTTPRedirection)
         puts "Redirect recieved, resending get to #{ret['location']}" if @debug
-    	  http.start do |http|
-    	    ret = http.get(ret['location'], header)
-    	  end
+        location = URI.parse(ret['location'])
+	https = get_http_object(location)
+        if location.scheme == 'https'
+          puts "SSL True" if @debug
+          https.use_ssl = true
+          https.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        end
+    	https.start do |http|
+    	  ret = https.get(location.to_s, header)
+    	end
       end
       if ret.is_a?(Net::HTTPSuccess)
         puts "20x response recieved\nResponse: \n"+ret.read_body if @debug
