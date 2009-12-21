@@ -89,6 +89,9 @@ class Calendar
   #Set the calendar to public (p = true) or private (p = false).  Publically viewable
   #calendars can be accessed by anyone without having to log in to google calendar.  See
   #Calendar#to_iframe for options to display a public calendar in a webpage.
+  #
+  #The calendar must exist on the google service before setting the calendar to public.
+  #The setting is saved immediately--it's not necessary to call save.
   def public=(p)
     if p
       permissions = 'http://schemas.google.com/gCal/2005#read' 
@@ -299,7 +302,7 @@ class Calendar
         ele.elements.each do |e|
           #puts "e = "+e.to_s if @service.debug
           #puts "previous element = "+e.previous_element.to_s if @service.debug
-          if e.name == 'role' and e.previous_element.name == 'scope' and e.previous_element.attributes['type'] == 'default'
+          if e.name == 'role' and e.previous_element and e.previous_element.name == 'scope' and e.previous_element.attributes['type'] == 'default'
             if e.attributes['value'].match('#read')
               @public = true
             else
